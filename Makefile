@@ -3,7 +3,16 @@
 # (to change binary name)
 #
 
-build:
+.PHONY: build test clean install
+
+build: clean test
 	go build -i -o check_rest
+
+clean:
+	rm -f check_rest
+
+test:
+	go test
+
 install:
 	mv check_rest ${GOPATH}/bin/.
