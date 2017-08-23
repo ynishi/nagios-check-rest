@@ -59,6 +59,10 @@ var options *Opts
 func SetOpts(opts *Opts) {
 	options = opts
 }
+
+func Parse(args []string) (opts *Opts) {
+	return DefaultOpts
+}
 func main() {
 	Check()
 }

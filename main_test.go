@@ -11,6 +11,8 @@ import (
 
 	"encoding/json"
 
+	"io/ioutil"
+
 	"github.com/olorin/nagiosplugin"
 )
 
@@ -51,7 +53,7 @@ func init() {
 	checkResult.AddResult(nagiosplugin.OK, "good")
 
 	var err error
-	request, err = http.NewRequest("POST", "http://localhost/data", strings.NewReader(`{"message":"OK?"}`))
+	request, err = http.NewRequest("POST", "http://localhost/data/check", strings.NewReader(`{"message":"OK?"}`))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -60,6 +62,32 @@ func init() {
 	optsResult.CheckFunc = optsFunc
 
 	SetOpts(optsResult)
+}
+
+func TestArgs(t *testing.T) {
+
+	args := strings.Split(`check_rest -u http://localhost/data/check -m POST -h "Authorization: apikey xxx" -d "{\"message\":\"OK?\"}"`, " ")
+	opts := Parse(args[1:])
+
+	url := "http://localhost/data/check"
+	if opts.Request.URL.String() != url {
+		t.Errorf("failed parse URL.\n want: %q,\n have: %q\n", url, opts.Request.URL)
+	}
+	auth := []string{"apikey xxx"}
+	if !reflect.DeepEqual(opts.Request.Header["Authorization"], auth) {
+		t.Errorf("failed parse apikey.\n want: %q,\n have: %q\n", auth, opts.Request.Header["Authorization"])
+	}
+
+	r := opts.Request.Body
+	buf, err := ioutil.ReadAll(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	data := []byte(`{"message":"OK?"}`)
+	if !reflect.DeepEqual(data, buf) {
+		t.Errorf("failed parse body.\n want: %q,\n have: %q\n", data, buf)
+	}
+
 }
 
 func TestOpts(t *testing.T) {
