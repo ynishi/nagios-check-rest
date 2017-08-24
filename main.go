@@ -5,6 +5,12 @@ import (
 
 	"encoding/json"
 
+	"flag"
+	"os"
+	"strings"
+
+	"io/ioutil"
+
 	"github.com/olorin/nagiosplugin"
 )
 
@@ -16,8 +22,7 @@ func Check() (chk *nagiosplugin.Check, err error) {
 	if err != nil {
 		return nil, err
 	}
-	buf := []byte{}
-	_, err = resp.Body.Read(buf)
+	buf, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -61,8 +66,28 @@ func SetOpts(opts *Opts) {
 }
 
 func Parse(args []string) (opts *Opts) {
-	return DefaultOpts
+	var (
+		headerStr string
+		urlStr    string
+		methodStr string
+		dataStr   string
+	)
+
+	f := flag.CommandLine
+	f.StringVar(&headerStr, "h", "", "header")
+	f.StringVar(&urlStr, "u", "", "url")
+	f.StringVar(&methodStr, "m", "", "method")
+	f.StringVar(&dataStr, "d", "", "data")
+
+	f.Parse(args[1:])
+	opts = DefaultOpts
+	opts.Request, _ = http.NewRequest(methodStr, urlStr, strings.NewReader(dataStr))
+	hs := strings.Split(headerStr, ":")
+	opts.Request.Header.Set(strings.Trim(hs[0], " "), strings.Trim(hs[1], " "))
+	return opts
 }
+
 func main() {
+	SetOpts(Parse(os.Args))
 	Check()
 }

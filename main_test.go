@@ -13,6 +13,9 @@ import (
 
 	"io/ioutil"
 
+	"fmt"
+	"net/http/httptest"
+
 	"github.com/olorin/nagiosplugin"
 )
 
@@ -23,6 +26,10 @@ const responseJson = `{
 "status":10000,
 "message":"OK"
 }`
+
+var testHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, responseJson)
+})
 
 var optsFunc = func(buf []byte) (responseStatus *ResponseStatus, err error) {
 	responseStatusOrig := &ResponseStatus{}
@@ -49,11 +56,13 @@ var optsFunc = func(buf []byte) (responseStatus *ResponseStatus, err error) {
 var request *http.Request
 
 func init() {
+	ts := httptest.NewServer(testHandler)
+
 	checkResult = nagiosplugin.NewCheck()
 	checkResult.AddResult(nagiosplugin.OK, "good")
 
 	var err error
-	request, err = http.NewRequest("POST", "http://localhost/data/check", strings.NewReader(`{"message":"OK?"}`))
+	request, err = http.NewRequest("POST", ts.URL, strings.NewReader(`{"message":"OK?"}`))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -66,8 +75,8 @@ func init() {
 
 func TestArgs(t *testing.T) {
 
-	args := strings.Split(`check_rest -u http://localhost/data/check -m POST -h "Authorization: apikey xxx" -d "{\"message\":\"OK?\"}"`, " ")
-	opts := Parse(args[1:])
+	args := []string{"check_rest", "-u", "http://localhost/data/check", "-m", "POST", "-h", "Authorization: apikey xxx", "-d", "{\"message\":\"OK?\"}"}
+	opts := Parse(args)
 
 	url := "http://localhost/data/check"
 	if opts.Request.URL.String() != url {
