@@ -5,7 +5,8 @@
 
 ## Current Status
 
-* Development
+* version 1.0
+* basic features implemented. 
 
 ## Install
 
