@@ -4,6 +4,7 @@ import (
 	"log"
 	"reflect"
 	"testing"
+	"time"
 
 	"net/http"
 
@@ -54,6 +55,8 @@ var optsFunc = func(buf []byte) (responseStatus *ResponseStatus, err error) {
 }
 
 var request *http.Request
+var warningDuration = time.Duration(5) * time.Second
+var criticalDuration = time.Duration(20) * time.Second
 
 func init() {
 	ts := httptest.NewServer(testHandler)
@@ -69,13 +72,23 @@ func init() {
 	optsResult = DefaultOpts
 	optsResult.Request = request
 	optsResult.CheckFunc = optsFunc
+	optsResult.Warning = warningDuration
+	optsResult.Critical = criticalDuration
 
 	SetOpts(optsResult)
 }
 
 func TestArgs(t *testing.T) {
 
-	args := []string{"check_rest", "-u", "http://localhost/data/check", "-m", "POST", "-h", "Authorization: apikey xxx", "-d", "{\"message\":\"OK?\"}"}
+	args := []string{
+		"check_rest",
+		"-u", "http://localhost/data/check",
+		"-m", "POST",
+		"-h", "Authorization: apikey xxx",
+		"-d", "{\"message\":\"OK?\"}",
+		"-w", "5",
+		"-c", "20",
+	}
 	opts := Parse(args)
 
 	url := "http://localhost/data/check"
@@ -96,6 +109,13 @@ func TestArgs(t *testing.T) {
 	if !reflect.DeepEqual(data, buf) {
 		t.Errorf("failed parse body.\n want: %q,\n have: %q\n", data, buf)
 	}
+	if opts.Warning != warningDuration {
+		t.Errorf("failed parse warning.\n want: %q,\n have: %q\n", warningDuration, opts.Warning)
+	}
+	if opts.Critical != criticalDuration {
+		t.Errorf("failed parse warning.\n want: %q,\n have: %q\n", criticalDuration, opts.Critical)
+	}
+
 
 }
 
@@ -104,6 +124,8 @@ func TestOpts(t *testing.T) {
 	opts := DefaultOpts
 	opts.Request = request
 	opts.CheckFunc = optsFunc
+	opts.Warning = warningDuration
+	opts.Critical = criticalDuration
 
 	if !reflect.DeepEqual(optsResult, opts) {
 		t.Fatalf("Didn't match Opts.\n want: %q,\n have: %q\n", optsResult, opts)
