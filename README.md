@@ -20,3 +20,14 @@ $ make install
 # To install to nagios plugin path, do below.
 $ mv check_rest /path/to/nagios/plugin
 ```
+
+## Nagios setting
+
+* nrpe command
+```
+command[check_rest]=/usr/lib64/nagios/plugins/check_rest -url $ARG1$ -w $ARG2$ -c $ARG3$ -h $ARG4$4-d $ARG5$
+```
+* nagios server
+```
+check_command check_nrpe!check_rest!http://localhost 20 5 'Authorization: apikey xxx' '{"message":"OK?"}'
+```
